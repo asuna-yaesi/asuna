@@ -1,0 +1,235 @@
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* ページ全体の高さを確保 */
+        }
+
+        h1 {
+            all: unset; /* すべてのデフォルトスタイルを解除 */
+            display: block; /* 必要に応じてブロック要素として扱う */
+        }     
+
+
+        .header {
+            display: flex; /* フレックスボックスを適用 */
+            justify-content: center; /* 横方向の中央揃え */
+            align-items: center; /* 縦方向の中央揃え */
+            font-size: 40px;
+            font-weight: bold; 
+            background-color: #000; /* 背景を黒に設定 */
+            color: #fff; /* 文字色を白に設定 */
+            height: 100px; 
+            width: 100%;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto; /* 横方向中央揃え */
+            display: inline-block;
+        }
+
+        .dropdown {
+            position: relative;
+            text-align: center; 
+        }
+
+        .dropdown-text {
+            color: #333;
+            cursor: default; /* 通常の矢印カーソル */
+        }
+
+        .dropdown-toggle {
+            color: #0000EE;
+            cursor: pointer; /* クリックできることを示すカーソル */
+        }
+
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%); /* 中央揃えのために位置を調整 */
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background: #fff;
+            border: 1px solid #ccc;
+            width: max-content; 
+            text-align: left;
+            z-index: 100;
+        }
+
+        .dropdown-menu li {
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .dropdown-menu li a {
+            display: block; /* ブロック要素として扱う */
+            width: 100%; /* リストアイテム全体をカバー */
+            height: 100%; /* 高さを全体に設定 */
+            padding: 10px;
+        }
+
+        .dropdown-menu li:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu li:hover {
+            background-color: #eeeeee; /* 背景を暗く変更 */
+            cursor: pointer;
+        }
+
+
+        .dropdown-menu a:hover {
+            color: #007BFF; /* ホバー時のテキスト色 */
+        }
+
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        
+        .link-container {
+            font-size: 20px;
+            display: flex;
+            justify-content: center; 
+            align-items: flex-start;  
+            gap: 100px; /* リンク間の余白 */
+            margin-top: 20px;
+        }
+
+        .goods-links {
+            display: flex;
+            flex-direction: column; /* 縦方向に並べる */
+            align-items: center; /* 中央揃え */
+            gap: 10px;
+        }
+
+
+        .dropdown-container
+            display: flex;
+            flex-direction: column; /* 縦方向に並べる */
+            align-items: center; /* 中央揃え */
+
+        }
+
+        .goods-list-link:hover {
+            color: #007BFF; /* ホバー時のリンク色 */
+            background-color: #f0f0f0; /* 背景色を追加 */
+            
+        }
+
+
+        .footer {
+            background-color: #000; /* フッターの背景色を黒に設定 */
+            color: #fff; /* テキスト色を白に設定 */
+            display: flex; /* フレックスボックスで横並びに */
+            flex-direction: column; /* 上下2段に分ける */
+            justify-content: center; /* セルを中央揃え */
+            align-items: center; /* 縦方向も中央揃え */
+            width: 100%; /* 横幅をページ全体に広げる */
+            padding: 10px 0; /* 内側の余白を追加 */
+            margin-top: auto;
+        }
+
+
+        .footer-top, .footer-bottom {
+            display: flex;
+            justify-content: center;  /* 各セルを均等に配置 */
+            width: 100%; /* 横幅を最大にする */
+            padding: 10px 0; /* 上下の余白を追加 */
+        }
+
+        .footer-cell {
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background-color: #222; /* 各セルの背景色を濃い灰色に設定 */
+            color: #fff; /* テキスト色を白に設定 */
+            text-align: center; /* テキストを中央揃え */
+            width: 315px; 
+            height: 45px;
+            margin: 0 10px; /* セル間のスペースを追加 */
+            border-radius: 5px; /* 角を丸める（オプション） */
+            font-size: 18px;
+        }
+
+        .footer-cell a {
+            font-size: 18px;
+            text-decoration: none; /* アンダーラインを削除 */
+            color: inherit; /* テキスト色を継承 */
+            display: flex; /* フレックスボックスで中央揃え */
+            justify-content: center; /* 水平中央揃え */
+            align-items: center; 
+            width: 100%; /* セル全体をカバー */
+            height: 100%;
+        }
+
+
+
+        .footer-cell:hover {
+            background-color: #444; /* ホバー時の背景色変更 */
+            cursor: pointer; /* ホバー時にポインタを表示 */
+        }
+
+        .footer-copyright {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 10px;
+            color: #aaa;
+        }
+
+        @media (max-width: 660px) {
+
+            .header {
+                font-size: 6vw;
+                height: 15.1vw; 
+            }
+
+            .dropdown-menu li a {
+                padding: 1.5vw;
+            }
+            
+            .link-container {
+                font-size: calc(3vw * 0.9 + 2px);
+                gap: 15vw; /* リンク間の余白 */
+                margin-top: calc(3vw * 0.9 + 2px);
+            }
+    
+            .goods-links {
+                gap: 1.5vw;
+            }
+
+            .footer {
+                padding: 1.5vw 0; /* 内側の余白を追加 */
+            }
+    
+    
+            .footer-top, .footer-bottom {
+                padding: 1.5vw 0; /* 上下の余白を追加 */
+            }
+    
+            .footer-cell {
+                width: 47vw; 
+                height: 6.8vw;
+                margin: 0 1.5vw; /* セル間のスペースを追加 */
+                font-size: 2.7vw;
+            }
+    
+            .footer-cell a {
+                font-size: 2.7vw;
+            }
+    
+            .footer-copyright {
+                font-size: 2.1vw;
+                margin-top: 1.5vw;
+            }
+
+        }

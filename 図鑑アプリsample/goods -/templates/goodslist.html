@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グッズ図鑑</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/goodslist.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <h1>グッズ一覧</h1>
+            <div class="icon">
+                <i class="fas fa-cog"></i>
+                <div class="menu">
+                    <a href="#" id="reset">・リセット</a>
+                </div>
+            </div>
+        </header>
+    
+        <div class="container">
+            <div class="search-container">
+                <form method="get" action="/goodslist" style="display: flex; align-items: center;">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        name="search" 
+                        placeholder="キーワードで検索" 
+                        value="{{ search_query }}">
+                    
+                    <button type="submit" id="searchButton">
+                        🔍
+                    </button>
+    
+                    {% if search_query %}
+                    <button type="button" id="resetButton" onclick="resetSearch()">
+                        ×
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+    
+            <div class="status-button-container">
+                <button id="changeStatusButton" class="change-button">
+                    <span class="material-icons" style="vertical-align: middle;">autorenew</span>
+                    <span id="statusText">全て</span>
+                </button>
+            </div>
+    
+            <div class="button-group">
+                <button id="goodsListButton" class="scroll-to-top" onclick="changePage(1)">グッズ一覧</button>
+                <button id="wishlistButton" class="scroll-to-top" onclick="redirectToGoods2()">欲しいもの</button>
+            </div>
+        </div>
+    
+        <div id="imageContainer">
+            {% for item in image_links %}
+                <div class="image-container">
+                    <a href="{{ item.link }}"><img src="{{ item.image_url }}" alt="Image"></a>
+                    <img src="{{ url_for('static', filename='icons/heart-regular.svg') }}" class="heart-icon" alt="Heart Icon">
+                    <img src="{{ url_for('static', filename='icons/check-circle-regular.svg') }}" class="check-icon" alt="Check Icon">
+                    <p class="hidden-text">{{ item.other_text }}</p> <!-- 商品のその他のテキスト -->
+                </div>
+            {% endfor %}
+        </div>
+    
+        <div id="overlay" class="overlay"></div>
+    
+        <div class="pagination-container">
+            <div class="pagination" id="pagination">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search_query }}" class="page-link">＜ </a>
+                {% endif %}
+    
+                {% if current_page > 3 %}
+                    <a href="?page=1&search={{ search_query }}" class="page-link">1</a>
+                    {% if current_page > 4 %}
+                        <span class="ellipsis">...</span>
+                    {% endif %}
+                {% endif %}
+    
+                {% for i in range(current_page - 2, current_page + 3) %}
+                    {% if i > 0 and i <= total_pages %}
+                        {% if i == current_page %}
+                            <span class="page-link active">{{ i }}</span>
+                        {% else %}
+                            <a href="?page={{ i }}&search={{ search_query }}" class="page-link">{{ i }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+    
+                {% if current_page < total_pages - 2 %}
+                    {% if current_page < total_pages - 3 %}
+                        <span class="ellipsis">...</span>
+                    {% endif %}
+                    <a href="?page={{ total_pages }}&search={{ search_query }}" class="page-link">{{ total_pages }}</a>
+                {% endif %}
+    
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search_query }}" class="page-link"> ＞</a>
+                {% endif %}
+            </div>
+        </div>
+    </div> <!-- wrapper end -->
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-cell">
+                <a href="{{ url_for('home') }}">ホーム</a>
+            </div>
+            <div class="footer-cell">使用方法</div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-cell">連絡先</div>
+            <div class="footer-cell">免責事項</div>
+        </div>
+        <div class="footer-copyright">
+            Copyright © 2024 グッズ図鑑. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            const form = document.querySelector('form');
+            form.submit();
+        }
+
+
+
+        // アイコンクリックでメニューの表示/非表示を切り替える
+        document.querySelector('.icon').addEventListener('click', function () {
+            const menu = document.querySelector('.menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // リセットボタンのクリックイベントを追加
+        document.getElementById('reset').addEventListener('click', function (e) {
+            e.preventDefault();
+
+
+            if (confirm("本当に記録された状態をすべてリセットしますか？")) {
+                // ローカルストレージを全削除
+                localStorage.clear();
+                alert("リセットしました。");
+
+                location.reload();
+            }
+        });
+
+        // メニュー外をクリックしたらメニューを非表示にする
+        document.addEventListener('click', function (e) {
+            const menu = document.querySelector('.menu');
+            const icon = document.querySelector('.icon');
+            if (!icon.contains(e.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+
+        function changePage(pageNumber) {
+            // 現在の検索キーワードを保持してリダイレクト
+            const searchQuery = document.getElementById('searchInput')?.value || '';
+            window.location.href = `?page=${pageNumber}&search=${encodeURIComponent(searchQuery)}`;
+        }
+
+
+        function redirectToGoods2() {
+            window.location.href = "{{ url_for('goods2') }}";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let clickedImageUrls = JSON.parse(localStorage.getItem("clickedImageUrls")) || [];
+            let checkedImageUrls = JSON.parse(localStorage.getItem("checkedImageUrls")) || [];
+            const imageContainers = document.querySelectorAll(".image-container");
+            const overlay = document.getElementById("overlay"); // オーバーレイ要素
+            const statuses = ["全て", "未入手", "入手済"]; // ステータス配列
+            let currentStatusIndex = 0; // 初期ステータス
+        
+            imageContainers.forEach((container) => {
+                const imgElement = container.querySelector("img");
+                const heartIcon = container.querySelector(".heart-icon");
+                const checkIcon = container.querySelector(".check-icon");
+                const imageUrl = imgElement.src;
+
+                // SVGファイルのパス
+                const heartFar = "{{ url_for('static', filename='icons/heart-regular.svg') }}";
+                const heartFas = "{{ url_for('static', filename='icons/heart-solid.svg') }}";
+                const checkFar = "{{ url_for('static', filename='icons/check-circle-regular.svg') }}";
+                const checkFas = "{{ url_for('static', filename='icons/check-circle-solid.svg') }}";
+        
+                // 状態を復元
+                if (clickedImageUrls.some((item) => item.image_url === imageUrl)) {
+                    heartIcon.src = heartFas;
+                } else {
+                    heartIcon.src = heartFar;
+                }
+        
+                if (checkedImageUrls.some((item) => item.image_url === imageUrl)) {
+                    checkIcon.src = checkFas;
+                } else {
+                    checkIcon.src = checkFar;
+                }
+        
+                // ハートアイコンのクリックイベント
+                heartIcon.addEventListener("click", function () {
+                            
+                    const matchingItem = {
+                        image_url: imageUrl,
+                        link: container.querySelector("a").href, // リンク先を取得
+                        other_text: container.querySelector(".hidden-text").textContent.trim()
+                    };
+
+
+                    if (heartIcon.src.endsWith("heart-regular.svg")) {
+                        heartIcon.src = heartFas;
+                        if (!clickedImageUrls.some((item) => item.image_url === imageUrl)) {
+                            clickedImageUrls.push(matchingItem);
+                        }
+                    } else {
+                        heartIcon.src = heartFar;
+                        clickedImageUrls = clickedImageUrls.filter((item) => item.image_url !== imageUrl);
+                    }
+        
+                    localStorage.setItem("clickedImageUrls", JSON.stringify(clickedImageUrls));
+                });
+        
+                // チェックアイコンのクリックイベント
+                checkIcon.addEventListener("click", function () {
+              
+                    const matchingItem = {
+                        image_url: imageUrl,
+                        link: container.querySelector("a").href, // リンク先を取得
+                        other_text: container.querySelector(".hidden-text").textContent.trim()
+                    };
+
+
+                    if (checkIcon.src.endsWith("check-circle-regular.svg")) {
+                        checkIcon.src = checkFas;
+                        if (!checkedImageUrls.some((item) => item.image_url === imageUrl)) {
+                            checkedImageUrls.push(matchingItem);
+                        }
+                    } else {
+                        checkIcon.src = checkFar;
+                        checkedImageUrls = checkedImageUrls.filter((item) => item.image_url !== imageUrl);
+                    }
+
+                            
+                    localStorage.setItem("checkedImageUrls", JSON.stringify(checkedImageUrls));
+
+                    updateOverlay();
+                });
+            });
+
+            // ステータス変更ボタンのクリックイベント
+            document.getElementById("changeStatusButton").addEventListener("click", function () {
+                currentStatusIndex = (currentStatusIndex + 1) % statuses.length;
+                const currentStatus = statuses[currentStatusIndex];
+                document.getElementById("statusText").textContent = currentStatus;
+
+                updateOverlay();
+            });
+
+            // ステータスに応じたオーバーレイを更新
+            function updateOverlay() {
+                const currentStatus = statuses[currentStatusIndex];
+
+
+                imageContainers.forEach((container) => {
+                    const checkIcon = container.querySelector(".check-icon");
+                    const isChecked = checkIcon.src.endsWith("check-circle-solid.svg");
+                    const overlayElement = container.querySelector(".overlay");
+
+                    if (currentStatus === "未入手" && isChecked) {
+                        container.classList.add("with-overlay");
+                    } else if (currentStatus === "入手済" && !isChecked) {
+                        container.classList.add("with-overlay");
+                    } else {
+                        container.classList.remove("with-overlay");
+                    }
+                });
+            }
+
+            // 初期オーバーレイの設定
+            updateOverlay();
+        });
+    </script>
+
+</body>
+</html>

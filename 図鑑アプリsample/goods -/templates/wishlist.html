@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グッズ図鑑</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wishlist.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <h1>欲しいものリスト</h1>
+            <div class="icon">
+                <i class="fas fa-cog"></i>
+                <div class="menu">
+                    <a href="#" id="clearWishlist">・リセット</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="キーワードで検索">
+                <button id="searchButton">🔍</button>
+                <button id="clearSearchResults" style="display: none;">×</button>
+            </div>
+
+            <div class="status-button-container">
+                <button id="changeStatusButton" class="change-button">
+                    <span class="material-icons" style="vertical-align: middle;">autorenew</span>
+                    <span id="statusText">全て</span>
+                </button>
+            </div>
+
+            <div class="button-group">
+                <button id="goodsListButton" class="scroll-to-top" onclick="redirectToIndex()">グッズ一覧</button>
+                <button id="wishlistButton" class="scroll-to-top" onclick="changePage(1)">欲しいもの</button>
+            </div>
+        </div>
+
+        <div id="imageContainer">
+            {% for item in image_links %}
+                <div class="image-container">
+                    <a href="{{ item.link }}"><img src="{{ item.image_url }}" alt="Image"></a>
+                    <img src="{{ url_for('static', filename='icons/heart-regular.svg') }}" class="heart-icon" alt="Heart Icon">
+                    <img src="{{ url_for('static', filename='icons/check-circle-regular.svg') }}" class="check-icon" alt="Check Icon">
+                    <p class="hidden-text">{{ item.other_text }}</p> <!-- 商品のその他のテキスト -->
+                </div>
+            {% endfor %}
+        </div>
+
+        <div id="overlay" class="overlay"></div>
+
+        <div class="pagination-container">
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div> <!-- wrapper end -->
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-cell">
+                <a href="{{ url_for('home') }}">ホーム</a>
+            </div>
+            <div class="footer-cell">使用方法</div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-cell">連絡先</div>
+            <div class="footer-cell">免責事項</div>
+        </div>
+        <div class="footer-copyright">
+            Copyright © 2024 グッズ図鑑. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        var imageContainer = document.getElementById("imageContainer");
+        var paginationContainer = document.getElementById("pagination");
+        var maxRows = 36;
+        var currentPage = 1;
+        var clickedImageUrls = JSON.parse(localStorage.getItem("clickedImageUrls")) || [];
+        var checkedImageUrls = JSON.parse(localStorage.getItem("checkedImageUrls")) || [];
+
+        // フィルタされた画像リンクを保持するための変数を追加
+        var filteredImageLinks = clickedImageUrls;
+
+        var statuses = ["全て", "未入手", "入手済"]; // ステータス配列
+        var currentStatusIndex = 0; // 初期ステータス（"全て"）
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // 初期ロード時にURLのクエリパラメータから状態を復元
+            var urlParams = new URLSearchParams(window.location.search);
+            currentPage = parseInt(urlParams.get("page")) || 1;
+            var searchQuery = urlParams.get("search") || "";
+            document.getElementById("searchInput").value = searchQuery;
+            document.getElementById("statusText").textContent = statuses[currentStatusIndex];
+
+            if (searchQuery) {
+                // 検索クエリがある場合は検索を実行
+                var searchWords = searchQuery.split(/\s+/).filter(function(word) {
+                    return word.length > 0;  // 空のワードは除外
+                });
+                filteredImageLinks = clickedImageUrls.filter(function(image) {
+                    return searchWords.every(function(word) {
+                        return image.other_text && image.other_text.toLowerCase().includes(word);
+                    });
+                });
+            }
+
+
+
+            document.getElementById("changeStatusButton").addEventListener("click", function () {
+                currentStatusIndex = (currentStatusIndex + 1) % statuses.length;
+                const currentStatus = statuses[currentStatusIndex];
+                document.getElementById("statusText").textContent = currentStatus;
+
+                updateOverlay(); // ステータス変更時にオーバーレイを更新
+            });
+
+
+
+
+            document.querySelector('.icon').addEventListener('click', function () {
+                const menu = document.querySelector('.menu');
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+
+            document.getElementById('clearWishlist').addEventListener('click', function (e) {
+                e.preventDefault();   
+
+                if (confirm("本当に欲しいものリストを空にしますか？")) {
+                    localStorage.removeItem("clickedImageUrls");
+
+                    alert("リセットしました。");
+
+　　　　　　　　   filteredImageLinks = [];
+                    clickedImageUrls = [];         
+                    displayImages(); 
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                const menu = document.querySelector('.menu');
+                const icon = document.querySelector('.icon');
+                if (!icon.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+
+            // 検索機能
+            document.getElementById("searchButton").addEventListener("click", function() {
+                var searchText = document.getElementById("searchInput").value.toLowerCase();
+
+                // 検索文字列をスペースで分割し、各ワードを配列に
+                var searchWords = searchText.split(/\s+/).filter(function(word) {
+                    return word.length > 0;  // 空のワードは除外
+                }); 
+
+                // フィルタリング処理: other_textに検索文字列が含まれている場合のみ残す
+                filteredImageLinks = clickedImageUrls.filter(function (image) {
+                    return searchWords.every(function (word) {
+                        return image.other_text && image.other_text.toLowerCase().includes(word);
+                    });
+                });
+
+                // フィルタ結果に基づいてリセットボタンの表示を切り替え
+                if (filteredImageLinks.length !== clickedImageUrls.length || filteredImageLinks.length === 0) {
+                    document.getElementById("clearSearchResults").style.display = "inline-block"; // リセットボタンを表示
+                } else {
+                    document.getElementById("clearSearchResults").style.display = "none"; // リセットボタンを非表示
+                }
+
+                // URLクエリパラメータを更新
+                var url = new URL(window.location.href);
+                url.searchParams.set("search", searchText);
+                url.searchParams.set("page", 1); // 検索時は1ページ目に戻る
+                window.history.pushState({}, "", url);
+
+        　　    currentPage = 1; 
+        　　    displayImages();
+
+            });
+
+            // 検索バーでエンターキーを押したときに検索ボタンをクリック
+            document.getElementById("searchInput").addEventListener("keydown", function(event) {
+                if (event.key === "Enter") { // エンターキーを判定
+                    event.preventDefault(); // フォーム送信などのデフォルト動作を防ぐ
+                    document.getElementById("searchButton").click(); // 検索ボタンをクリック
+                }
+            });
+
+　　　　    document.getElementById("clearSearchResults").addEventListener("click", function() {
+
+   　　　　     document.getElementById("searchInput").value = "";
+
+                filteredImageLinks = clickedImageUrls;
+                currentPage = 1;
+
+                // URLクエリパラメータをクリア
+                var url = new URL(window.location.href);
+                url.searchParams.delete("search");
+                url.searchParams.set("page", 1);
+                window.history.pushState({}, "", url);
+
+                displayImages();
+
+            });
+
+
+            // 最初の画像表示を実行
+            displayImages();
+        });
+
+        function changePage(pageNumber) {
+
+            // 現在のURLを取得
+            var url = new URL(window.location.href);
+            // ページ番号をクエリパラメータに設定
+            url.searchParams.set("page", pageNumber); 
+            // URLを更新
+            window.history.pushState({}, "", url);
+
+            currentPage = pageNumber; // ページ番号を更新
+
+            displayImages(); // 画像を再描画
+        }
+
+
+        function redirectToIndex() {
+            window.location.href = "{{ url_for('index') }}";
+        }
+
+
+
+
+        // オーバーレイの更新関数
+        function updateOverlay() {
+            const currentStatus = statuses[currentStatusIndex];
+
+            const imgContainers = document.querySelectorAll(".image-container");
+            imgContainers.forEach((container) => {
+                const checkIcon = container.querySelector(".check-icon");
+                const isChecked = checkIcon.src.includes("check-circle-solid.svg"); 
+                const overlayElement = container.querySelector(".overlay"); // オーバーレイ要素
+
+                // 現在のステータスに応じたオーバーレイの適用
+                if (currentStatus === "未入手" && isChecked) {
+                    container.classList.add("with-overlay");
+                } else if (currentStatus === "入手済" && !isChecked) {
+                    container.classList.add("with-overlay");
+                } else {
+                    container.classList.remove("with-overlay");
+                }
+            });
+        }
+
+
+
+
+        function displayImages() {
+
+            imageContainer.innerHTML = "";
+            
+            var totalImagesToShow = maxRows;
+            var start = (currentPage - 1) * maxRows;
+            var end = start + totalImagesToShow;
+
+            for (var i = start; i < end && i < filteredImageLinks.length; i++) {
+                var imgContainer = document.createElement("div");
+                imgContainer.className = "image-container";
+
+                var linkElement = document.createElement("a");
+                linkElement.href = filteredImageLinks[i].link || "#";
+                linkElement.target = "_blank"; 
+
+                var imgElement = document.createElement("img");
+                imgElement.src = filteredImageLinks[i].image_url;
+                imgElement.alt = "保存された画像";
+
+                linkElement.appendChild(imgElement); // 画像をリンクにラップ
+
+                var overlayElement = document.createElement("div"); // オーバーレイ要素
+                overlayElement.className = "overlay"; // オーバーレイクラスを追加
+                imgContainer.appendChild(overlayElement);
+
+                var otherTextElement = document.createElement("p");
+                otherTextElement.textContent = filteredImageLinks[i].other_text;  // other_text を挿入
+
+                var heartIcon = document.createElement("img");
+                heartIcon.src = clickedImageUrls.some(item => item.image_url === filteredImageLinks[i].image_url)
+                    ? "{{ url_for('static', filename='icons/heart-solid.svg') }}"
+                    : "{{ url_for('static', filename='icons/heart-regular.svg') }}";
+                    heartIcon.className = "heart-icon";
+                    heartIcon.alt = "Heart Icon";
+
+                var checkIcon = document.createElement("img");
+                checkIcon.src = checkedImageUrls.some(item => item.image_url === filteredImageLinks[i].image_url)
+                    ? "{{ url_for('static', filename='icons/check-circle-solid.svg') }}"
+                    : "{{ url_for('static', filename='icons/check-circle-regular.svg') }}";
+                    checkIcon.className = "check-icon";
+                    checkIcon.alt = "Check Icon";
+
+
+                heartIcon.addEventListener("click", function() {
+
+                    var clickedImgElement = this.previousElementSibling.querySelector("img");
+                    var clickedUrl = clickedImgElement.src;
+
+                    var matchingItem = clickedImageUrls.find(function (item) {
+                        return item.image_url === clickedUrl;
+                    });
+
+                    if (matchingItem) {
+                        if (this.src.includes("heart-regular.svg")) {
+                            this.src = "{{ url_for('static', filename='icons/heart-solid.svg') }}";
+                            if (!clickedImageUrls.some(item => item.image_url === matchingItem.image_url)) {
+                                clickedImageUrls.push(matchingItem);
+                            }
+                        } else {
+                            this.src = "{{ url_for('static', filename='icons/heart-regular.svg') }}";
+                            clickedImageUrls = clickedImageUrls.filter(item => item.image_url !== matchingItem.image_url);
+                        }
+
+                        localStorage.setItem("clickedImageUrls", JSON.stringify(clickedImageUrls));
+                        filteredImageLinks = clickedImageUrls;
+                        displayImages();
+                    }
+                });
+
+                checkIcon.addEventListener("click", function() {
+
+                    var checkedImgElement = this.previousElementSibling.previousElementSibling.querySelector("img");
+                    var checkedUrl = checkedImgElement.src;
+
+                    var matchingItem = filteredImageLinks.find(function (item) {
+                        return item.image_url === checkedUrl;
+                    });
+
+                    if (matchingItem) {
+                        if (this.src.includes("check-circle-regular.svg")) {
+                            this.src = "{{ url_for('static', filename='icons/check-circle-solid.svg') }}";
+                            if (!checkedImageUrls.some(item => item.image_url === matchingItem.image_url)) {
+                                checkedImageUrls.push(matchingItem);
+                            }
+                        } else {
+                            this.src = "{{ url_for('static', filename='icons/check-circle-regular.svg') }}";
+                            checkedImageUrls = checkedImageUrls.filter(item => item.image_url !== matchingItem.image_url);
+                        }
+
+                        localStorage.setItem("checkedImageUrls", JSON.stringify(checkedImageUrls));
+                        
+                        displayImages();
+                    }
+                });
+
+                imgContainer.appendChild(linkElement);
+                imgContainer.appendChild(heartIcon);
+                imgContainer.appendChild(checkIcon);
+                       
+                imageContainer.appendChild(imgContainer);
+            }
+
+            updatePagination();
+
+            if (imageContainer.childNodes.length === 0 && currentPage > 1) {
+                currentPage = Math.max(1, currentPage - 1);
+                displayImages();
+            }
+
+            updateOverlay(); // 表示後にオーバーレイを更新
+        }
+
+        function updatePagination() {
+            paginationContainer.innerHTML = "";
+            var totalPages = Math.ceil(filteredImageLinks.length / maxRows);
+            for (var i = 1; i <= totalPages; i++) {
+                var pageButton = document.createElement("a");
+                pageButton.href = "#"; // ページ遷移防止用リンク
+                pageButton.textContent = i;
+                pageButton.classList.add("page-link");
+                if (i === currentPage) {
+                    pageButton.classList.add("active");
+                }
+
+                pageButton.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    var clickedPageNumber = parseInt(this.textContent);
+
+                    if (clickedPageNumber === currentPage) {
+                        return;
+                    }
+                    changePage(clickedPageNumber);
+                });
+
+                paginationContainer.appendChild(pageButton);
+            }
+        }
+        
+    </script>
+
+</body>
+</html>
