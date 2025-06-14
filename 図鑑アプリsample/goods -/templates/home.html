@@ -1,1 +1,50 @@
-非公開
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グッズ図鑑</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <h1>グッズ図鑑</h1>
+    </header>
+
+    <main>
+        <div class="link-container">
+            <nav class="dropdown-container">
+                <ul>
+                    <li class="dropdown">
+                        <span class="dropdown-toggle">アニメから検索</span>
+                        <ul class="dropdown-menu">
+                            <li><a href="{{ url_for('index', search='') }}"></a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <div class="goods-links">
+                <a href="{{ url_for('index') }}" class="goods-list-link">グッズ一覧</a>
+                <a href="{{ url_for('goods2') }}" class="goods-list-link">欲しいものリスト</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-cell">
+                <a href="{{ url_for('home') }}">ホーム</a>
+            </div>
+            <div class="footer-cell">使用方法</div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-cell">連絡先</div>
+            <div class="footer-cell">免責事項</div>
+        </div>
+        <div class="footer-copyright">
+            Copyright © 2024 グッズ図鑑. All rights reserved.
+        </div>
+    </footer>
+</body>
+</html>
